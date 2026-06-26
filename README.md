@@ -40,17 +40,71 @@ sits on the near-black `#100A02`. Change all three in one place in `config.h`.
 
 ## Dependencies
 
-Build needs the X11 client headers/libraries:
+Build needs a C compiler, `make`, and the X11 client headers/libraries:
+`libX11`, `libXinerama`, `libXrandr`, `libXcomposite`, `libXrender`.
 
-- `libX11`
-- `libXinerama`
-- `libXrandr`
-- `libXcomposite`
-- `libXrender`
+### Install the build dependencies
 
-Optional at runtime: `rofi` (launcher), a terminal such as `alacritty`,
-`picom` (compositor), `polybar` (external bar), `pipewire`/`wireplumber`
-(audio session).
+**Debian / Devuan / Ubuntu / Mint**
+
+```sh
+sudo apt install build-essential libx11-dev libxinerama-dev \
+     libxrandr-dev libxcomposite-dev libxrender-dev
+```
+
+**Arch / Manjaro / EndeavourOS**
+
+```sh
+sudo pacman -S --needed base-devel libx11 libxinerama \
+     libxrandr libxcomposite libxrender
+```
+
+**Fedora / RHEL / Rocky / Alma**
+
+```sh
+sudo dnf install gcc make libX11-devel libXinerama-devel \
+     libXrandr-devel libXcomposite-devel libXrender-devel
+```
+
+**openSUSE**
+
+```sh
+sudo zypper install gcc make libX11-devel libXinerama-devel \
+     libXrandr-devel libXcomposite-devel libXrender-devel
+```
+
+**Void Linux**
+
+```sh
+sudo xbps-install -S base-devel libX11-devel libXinerama-devel \
+     libXrandr-devel libXcomposite-devel libXrender-devel
+```
+
+**Alpine**
+
+```sh
+sudo apk add build-base libx11-dev libxinerama-dev \
+     libxrandr-dev libxcomposite-dev libxrender-dev
+```
+
+**Gentoo** (most are pulled in by a normal X install)
+
+```sh
+sudo emerge -an x11-libs/libX11 x11-libs/libXinerama \
+     x11-libs/libXrandr x11-libs/libXcomposite x11-libs/libXrender
+```
+
+**NixOS** — a throwaway build shell:
+
+```sh
+nix-shell -p gcc gnumake xorg.libX11 xorg.libXinerama \
+     xorg.libXrandr xorg.libXcomposite xorg.libXrender
+```
+
+### Optional at runtime
+
+`rofi` (launcher), a terminal such as `alacritty`, `picom` (compositor),
+`polybar` (external bar), `pipewire`/`wireplumber` (audio session).
 
 ## Build & install
 
