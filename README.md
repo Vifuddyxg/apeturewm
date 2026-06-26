@@ -1,26 +1,32 @@
 # apeturewm
 
-A tiny, fast X11 tiling window manager — the WM for **Aperture Linux**.
+A small, fast tiling window manager for X11.
 
 Single-file C, BSP tiling tree, per-monitor bar, workspaces 1–9 (up to 500),
-Xinerama + RandR hotplug, and an optional XComposite overview. No modes, no
-runtime config file: everything is set at compile time in `config.h`,
-dwm-style — edit, `make`, restart.
+and an optional XComposite overview. Everything is set at compile time in
+`config.h`, dwm-style — edit, `make`, restart. No runtime config file.
 
-## Design
+## Features
 
-- **Super-light & minimal.** One C file, `-Os`, links only X11 + a few
-  extensions. The binary is ~75 KB.
-- **No vim modes, no command line.** Every key is a direct global binding
-  (Super + key). There is no INSERT/NORMAL/COMMAND state to think about.
-- **dwm-style config.** All settings — colors, sizes, keybinds, rules,
-  autostart — live in `config.h`. Change it and recompile.
-- **Minimal top bar.** A single line at the top showing workspaces on the
-  left and the clock on the right. That's it.
+- **Fast & light.** One C file, built with `-Os`. The binary is ~75 KB and
+  links only X11 plus a few standard extensions.
+- **Runs on Xorg or XLibre.** Build against the normal X11 client libraries
+  and run inside either server — no separate build needed.
+- **Multi-monitor.** Xinerama-based layout with live RandR hotplug: plug or
+  unplug an output and the screen reconfigures on the fly.
+- **EWMH-aware.** Reports active window, client list, desktops and fullscreen
+  state, so panels, pagers, and fullscreen apps behave correctly.
+- **Plays well with others.** Reserves space for external bars/docks via strut
+  hints (e.g. `polybar`), and an optional compositor (`picom`) works alongside
+  the built-in overview thumbnails.
+- **Tiling + floating + fullscreen.** BSP splits with adjustable ratios,
+  per-window floating, normal and "real" (EWMH) fullscreen, and window rules.
+- **dwm-style config.** Colors, sizes, keybinds, rules and autostart all live
+  in `config.h`. Change it and recompile.
 
-## Aperture palette
+## Palette
 
-Set in `config.h`:
+The default theme is amber-on-black, set in `config.h`:
 
 | Role                    | Hex        |
 |-------------------------|------------|
@@ -30,133 +36,175 @@ Set in `config.h`:
 
 The focused window border and the bar's primary text use the bright amber
 (`#F1B00A`); the active-workspace box and muted text use `#A66900`; everything
-sits on the near-black `#100A02`.
+sits on the near-black `#100A02`. Change all three in one place in `config.h`.
 
-## Build
+## Dependencies
 
-Needs X11 dev headers: `libX11`, `libXinerama`, `libXrandr`, `libXcomposite`,
-`libXrender`.
+Build needs the X11 client headers/libraries:
+
+- `libX11`
+- `libXinerama`
+- `libXrandr`
+- `libXcomposite`
+- `libXrender`
+
+Optional at runtime: `rofi` (launcher), a terminal such as `alacritty`,
+`picom` (compositor), `polybar` (external bar), `pipewire`/`wireplumber`
+(audio session).
+
+## Build & install
 
 ```sh
 make
-sudo make install      # installs the binary + the greeter session entry
+sudo make install
 ```
 
 `make install` places:
 
 - `/usr/local/bin/apeturewm` — the window manager
-- `/usr/share/xsessions/apeturewm.desktop` — the login session entry
+- `/usr/local/bin/apeturewm-session` — the login session wrapper
+- `/usr/share/xsessions/apeturewm.desktop` — the greeter session entry
 
 ## Running it
 
-### Without a greeter (`startx`)
+### With `startx`
 
-Run it straight from `~/.xinitrc`:
+Minimal `~/.xinitrc`:
 
 ```sh
-#!/bin/sh
-# ~/.xinitrc
-# optional: wallpaper / compositor / etc. go here, before exec
-# feh --bg-fill ~/wall.png &
 exec apeturewm
 ```
 
-then `startx`.
+Recommended `~/.xinitrc` for a full session (audio + session bus):
 
-### With a greeter (graphical login)
+```sh
+exec dbus-run-session sh -lc '
+export XDG_CURRENT_DESKTOP=apeturewm
+export XDG_SESSION_DESKTOP=apeturewm
+export DESKTOP_SESSION=apeturewm
+export XCURSOR_THEME=Adwaita
+export XCURSOR_SIZE=24
+command -v pipewire    >/dev/null 2>&1 && pipewire &
+command -v wireplumber >/dev/null 2>&1 && wireplumber &
+exec apeturewm
+'
+```
 
-`make install` drops `/usr/share/xsessions/apeturewm.desktop`:
+Then run `startx`.
+
+## Greeter / XSession
+
+If you want apeturewm in your graphical login, use a **session wrapper script**.
+Do not point the greeter directly at the `apeturewm` binary, or you may end up
+with a broken login session (no session bus, no audio).
+
+`make install` already sets both files up for you. They look like this:
+
+`/usr/share/xsessions/apeturewm.desktop`
 
 ```ini
 [Desktop Entry]
-Name=Aperture WM
-Comment=Minimal tiling window manager for Aperture Linux
-Exec=apeturewm
-TryExec=apeturewm
+Name=apeturewm
+Comment=Tiling window manager for X11
+Exec=/usr/local/bin/apeturewm-session
+TryExec=/usr/local/bin/apeturewm
 Type=XSession
 DesktopNames=apeturewm
-Keywords=tiling;wm;aperture;
+Keywords=tiling;wm;
 ```
 
-Every X11 greeter reads `/usr/share/xsessions/*.desktop`, so once that file is
-in place **"Aperture WM"** shows up in the session picker at login. Pick one of
-the setups below.
-
-#### LightDM (works on Devuan, no systemd)
+`/usr/local/bin/apeturewm-session`
 
 ```sh
-# Devuan / Debian
+#!/bin/sh
+export XDG_CURRENT_DESKTOP=apeturewm
+export XDG_SESSION_DESKTOP=apeturewm
+export XDG_SESSION_TYPE=x11
+
+exec dbus-run-session sh -lc '
+  command -v pipewire    >/dev/null 2>&1 && pipewire &
+  command -v wireplumber >/dev/null 2>&1 && wireplumber &
+  exec apeturewm
+'
+```
+
+If you set them up by hand, make the wrapper executable:
+
+```sh
+sudo chmod +x /usr/local/bin/apeturewm-session
+```
+
+Every X11 greeter reads `/usr/share/xsessions/*.desktop`, so once that entry is
+in place **apeturewm** shows up in the session picker. Pick whichever greeter
+you like.
+
+### greetd + tuigreet
+
+`greetd` is a tiny, init-agnostic greeter; `tuigreet` is its console UI. It
+picks up `apeturewm` automatically from the `.desktop` above.
+
+`/etc/greetd/config.toml`
+
+```toml
+[terminal]
+vt = 1
+
+[default_session]
+command = "tuigreet --remember --sessions /usr/share/xsessions"
+user = "greeter"
+```
+
+Enable it at boot (OpenRC / sysvinit, no systemd required):
+
+```sh
+sudo rc-update add greetd default          # OpenRC
+sudo update-rc.d greetd defaults           # sysvinit
+```
+
+### LightDM
+
+LightDM auto-detects the session from the `.desktop` — nothing extra is
+required:
+
+```sh
 sudo apt install lightdm lightdm-gtk-greeter
 ```
 
-LightDM auto-detects the session from the `.desktop` above — nothing else is
-required. To theme the greeter to match Aperture and default new logins to
-apeturewm, edit `/etc/lightdm/lightdm.conf`:
+To default new logins to apeturewm and theme the greeter, edit
+`/etc/lightdm/lightdm.conf`:
 
 ```ini
 [Seat:*]
-# default session shown selected in the picker
 user-session=apeturewm
 greeter-session=lightdm-gtk-greeter
 
 [greeter]
-# amber-on-black to match the WM
 theme-name=Adwaita-dark
 background=#100A02
 ```
 
-Enable it (Devuan uses sysvinit/OpenRC, not systemd):
+```sh
+sudo rc-update add lightdm default         # OpenRC
+sudo update-rc.d lightdm defaults          # sysvinit
+```
+
+### SDDM
 
 ```sh
-sudo rc-update add lightdm default     # OpenRC
-# or, on sysvinit:
-sudo update-rc.d lightdm defaults
+sudo apt install sddm
 ```
 
-#### greetd (minimal, no systemd — fits the lightweight theme)
+SDDM also reads `/usr/share/xsessions/`; select **apeturewm** from the session
+menu at the bottom of the login screen.
 
-`greetd` is a tiny, init-agnostic greeter. Pair it with the text greeter
-`agreety` (console) or `gtkgreet` (graphical). Complete console example:
+Notes:
 
-```sh
-sudo apt install greetd
-```
-
-`/etc/greetd/config.toml`:
-
-```toml
-[terminal]
-# the VT greetd runs on
-vt = 1
-
-[default_session]
-# agreety draws the login prompt, then launches the command below
-command = "agreety --cmd apeturewm"
-user = "greeter"
-```
-
-For a graphical greetd login with `gtkgreet`, point it at a session wrapper
-instead:
-
-`/etc/greetd/config.toml`:
-
-```toml
-[terminal]
-vt = 1
-
-[default_session]
-command = "cage -s -- gtkgreet"
-user = "greeter"
-```
-
-…and let it launch X with apeturewm via a small `~/.xsession` (or a wrapper
-script) that ends in `exec apeturewm`.
-
-Start greetd at boot (OpenRC):
-
-```sh
-sudo rc-update add greetd default
-```
+- apeturewm needs X11 **client** libraries at build time, not XLibre server
+  headers. The same binary runs under Xorg or XLibre.
+- Multi-monitor support depends on the Xinerama extension being available and
+  active in the running X server.
+- A compositor (`picom`) is optional and not required. For the lightest setup,
+  don't install one — apeturewm works fine without it.
 
 ## Configure
 
@@ -172,7 +220,7 @@ without ending your X session).
 What you can set in `config.h`:
 
 - **Layout:** gap, border width, workspace count.
-- **Palette:** the three Aperture colors and how they map to borders/bar.
+- **Palette:** the three colors and how they map to borders/bar.
 - **Bar:** height, top/bottom, padding, font, and the comma-separated item
   lists (`workspaces`, `title`, `clock`, `battery`) for left/center/right.
 - **Keybinds:** the `keybinds[]` table — `{ mod, keysym, action }`.
@@ -220,3 +268,4 @@ ratio:+0.05  ratio:-0.05
 
 Mouse: `Super+Button1` move/swap, `Super+Button3` resize, `Super+scroll`
 switch workspace.
+# apeturewm
