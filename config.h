@@ -16,12 +16,14 @@
 #define COL_LINE   0xA66900      /* secondary text / lines          */
 #define COL_TEXT   0xF1B00A      /* primary text                    */
 
-#define CFG_BORDER_FOCUS   COL_TEXT    /* focused window border     */
-#define CFG_BORDER_NORMAL  COL_LINE    /* unfocused window border   */
+#define CFG_BORDER_FOCUS   COL_LINE    /* focused window border     */
+#define CFG_BORDER_NORMAL  COL_BG    /* unfocused window border   */
+
+#define CFG_ROOT_BG        0x2d1e13    /* empty desktop / root background */
 
 /* ----- bar (minimal, single line, top) ----- */
 #define CFG_BAR_ENABLED    1
-#define CFG_BAR_HEIGHT     20
+#define CFG_BAR_HEIGHT     22
 #define CFG_BAR_POSITION   BAR_TOP     /* BAR_TOP or BAR_BOTTOM     */
 #define CFG_BAR_PADDING_X  8
 #define CFG_BAR_ITEM_GAP   8
@@ -31,16 +33,16 @@
 /* bar layout: comma list of items. items: workspaces,title,clock,battery */
 #define CFG_BAR_LEFT       "workspaces"
 #define CFG_BAR_CENTER     ""
-#define CFG_BAR_RIGHT      "clock"
+#define CFG_BAR_RIGHT      "battery,clock"
 
-#define CFG_BAR_BG         COL_BG       /* bar background           */
+#define CFG_BAR_BG         CFG_ROOT_BG  /* bar background (matches desktop) */
 #define CFG_BAR_FG         COL_TEXT     /* normal bar text          */
 #define CFG_BAR_ACCENT_BG  COL_LINE     /* active workspace box bg  */
 #define CFG_BAR_ACCENT_FG  COL_BG       /* active workspace box text*/
 #define CFG_BAR_MUTED_FG   COL_LINE     /* inactive / muted text    */
 
 /* ----- misc ----- */
-#define CFG_TERMINAL          "alacritty"
+#define CFG_TERMINAL          "st"
 #define CFG_SCREEN_OFF_MIN    0     /* dpms blank after N idle min (0=off) */
 #define CFG_AUTO_MONITORS     1     /* auto-enable hotplugged outputs      */
 #define CFG_MONITOR_HOOK      ""    /* command run after a layout change   */

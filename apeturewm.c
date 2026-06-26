@@ -85,6 +85,7 @@ static int numws = CFG_WORKSPACES;   /* active workspaces, configurable: 1..MAXW
 static int gap = CFG_GAP, bw = CFG_BORDER, barh = CFG_BAR_HEIGHT, barenabled = CFG_BAR_ENABLED, externalbarh = 0;
 static int barpadx = CFG_BAR_PADDING_X, baritemgap = CFG_BAR_ITEM_GAP, bartextpad = CFG_BAR_TEXT_PAD, barwsminw = CFG_BAR_WS_MIN_W;
 static unsigned long cfocus = CFG_BORDER_FOCUS, cnorm = CFG_BORDER_NORMAL;
+static unsigned long rootbg = CFG_ROOT_BG;
 static unsigned long barbg = CFG_BAR_BG, barfg = CFG_BAR_FG;
 static unsigned long baraccentbg = CFG_BAR_ACCENT_BG, baraccentfg = CFG_BAR_ACCENT_FG;
 static unsigned long barmutedfg = CFG_BAR_MUTED_FG;
@@ -863,11 +864,16 @@ static int draw_tag_box(Window win, int x, int y, const char *text,
 {
     int pad = bartextpad;
     int w = textw(text) + pad * 2;
+    /* vertically center the text in the bar from the font metrics, so the
+       glyphs are never clipped regardless of bar height */
+    int baseline = barfont
+        ? y + (barh - (barfont->ascent + barfont->descent)) / 2 + barfont->ascent
+        : y + barh - 6;
     if (w < minw) w = minw;
     XSetForeground(dpy, bargc, bg);
     XFillRectangle(dpy, win, bargc, x, y, w, barh);
     XSetForeground(dpy, bargc, fg);
-    XDrawString(dpy, win, bargc, x + pad, y + barh - 8, text, (int)strlen(text));
+    XDrawString(dpy, win, bargc, x + pad, baseline, text, (int)strlen(text));
     return w;
 }
 
@@ -972,7 +978,7 @@ static int draw_bar_item(Window win, int x, int y, BarItem item) {
     case BAR_ITEM_CLOCK:
         return curx + draw_tag_box(win, curx, y, tmp, barbg, barfg, 0);
     case BAR_ITEM_BATTERY:
-        return curx + draw_tag_box(win, curx, y, tmp, barbg, barmutedfg, 0);
+        return curx + draw_tag_box(win, curx, y, tmp, barbg, barfg, 0);
     default:
         return curx;
     }
@@ -2737,6 +2743,14 @@ static void setupbars(void) {
     if (barenabled) drawbars();
 }
 
+/* paint the root window (the empty desktop) a solid color. X invalidates the
+   root background on every framebuffer resize, so this is re-applied on RandR
+   changes too. */
+static void apply_root_bg(void) {
+    XSetWindowBackground(dpy, root, rootbg);
+    XClearWindow(dpy, root);
+}
+
 int main(int argc, char **argv) {
     (void)argc;
     wm_argv = argv;
@@ -2753,6 +2767,7 @@ int main(int argc, char **argv) {
     movecursor = XCreateFontCursor(dpy, XC_fleur);
     resizecursor = XCreateFontCursor(dpy, XC_bottom_right_corner);
     XDefineCursor(dpy, root, normalcursor);
+    apply_root_bg();
     apply_config();            /* settings first: compositor + auto_monitors gate the startup below */
     init_composite();
     initatoms();
@@ -2817,6 +2832,7 @@ int main(int argc, char **argv) {
                     if (mon_focused(curmon)) setfocus(curmon, mon_focused(curmon), 0);
                     rrchanged = 1;
                 }
+                if (rrchanged) apply_root_bg();   /* resize cleared the root */
                 /* the framebuffer resize invalidated the root wallpaper -- re-apply it */
                 if (rrchanged && monitor_hook[0]) spawn(monitor_hook);
                 continue;
