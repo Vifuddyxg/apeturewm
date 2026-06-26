@@ -1,0 +1,6 @@
+# build artifacts
+/apeturewm
+*.o
+
+# tooling
+.claude-flow/

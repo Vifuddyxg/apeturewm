@@ -1,0 +1,16 @@
+#!/bin/sh
+# apeturewm-session — login session wrapper for greeters / display managers.
+# Greeters should launch THIS, not the apeturewm binary directly, so that the
+# session bus and audio services are set up before the WM starts.
+
+export XDG_CURRENT_DESKTOP=apeturewm
+export XDG_SESSION_DESKTOP=apeturewm
+export XDG_SESSION_TYPE=x11
+export XCURSOR_THEME=Adwaita
+export XCURSOR_SIZE=24
+
+exec dbus-run-session sh -lc '
+  command -v pipewire    >/dev/null 2>&1 && pipewire &
+  command -v wireplumber >/dev/null 2>&1 && wireplumber &
+  exec apeturewm
+'

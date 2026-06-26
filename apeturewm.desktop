@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=apeturewm
+Comment=Tiling window manager for X11
+Exec=/usr/local/bin/apeturewm-session
+TryExec=/usr/local/bin/apeturewm
+Type=XSession
+DesktopNames=apeturewm
+Keywords=tiling;wm;
